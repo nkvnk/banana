@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import React, { useState, useEffect } from "react";
 import {
   RadarChart,
@@ -54,6 +56,10 @@ type DataSet = {
 };
 
 const RadarChartApp = () => {
+  if (typeof window !== "undefined") {
+    // このコードはクライアントサイドでのみ実行されます
+    const value = localStorage.getItem("someKey");
+  }
   const [metrics, setMetrics] = useState<Metric[]>(() => {
     const storedMetrics = localStorage.getItem("metrics");
     return storedMetrics ? JSON.parse(storedMetrics) : [];
@@ -145,7 +151,7 @@ const RadarChartApp = () => {
     setMetrics((prev) => prev.filter((m) => m.name !== metricName));
     setDataSets((prev) =>
       prev.map((ds) => {
-        const { [metricName]: _, ...remainingValues } = ds.values;
+        const { [metricName]: _removed, ...remainingValues } = ds.values;
         return { ...ds, values: remainingValues };
       })
     );
