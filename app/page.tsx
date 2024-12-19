@@ -1,6 +1,5 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-unused-vars */
-
 import React, { useState, useEffect } from "react";
 import {
   RadarChart,
@@ -60,15 +59,20 @@ const RadarChartApp = () => {
     // このコードはクライアントサイドでのみ実行されます
     const value = localStorage.getItem("someKey");
   }
-  const [metrics, setMetrics] = useState<Metric[]>(() => {
-    const storedMetrics = localStorage.getItem("metrics");
-    return storedMetrics ? JSON.parse(storedMetrics) : [];
-  });
 
-  const [dataSets, setDataSets] = useState<DataSet[]>(() => {
-    const storedData = localStorage.getItem("dataSets");
-    return storedData ? JSON.parse(storedData) : [];
-  });
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [dataSets, setDataSets] = useState<DataSet[]>([]);
+  useEffect(() => {
+    const storedMetrics = localStorage.getItem("metrics");
+    if (storedMetrics) {
+      setMetrics(JSON.parse(storedMetrics));
+    }
+
+    const storedDataSets = localStorage.getItem("dataSets");
+    if (storedDataSets) {
+      setDataSets(JSON.parse(storedDataSets));
+    }
+  }, []);
 
   const [activeDataSetId, setActiveDataSetId] = useState<number | null>(null);
   const [newMetricName, setNewMetricName] = useState<string>("");
