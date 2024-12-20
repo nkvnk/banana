@@ -14,6 +14,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -47,11 +48,16 @@ type Metric = {
   name: string;
 };
 
+type MetricValue = {
+  value: number;
+  comment: string;
+};
+
 type DataSet = {
   id: number;
   name: string;
   color: { stroke: string; fill: string };
-  values: { [key: string]: number };
+  values: { [key: string]: MetricValue };
 };
 
 const RadarChartApp = () => {
@@ -62,6 +68,9 @@ const RadarChartApp = () => {
 
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [dataSets, setDataSets] = useState<DataSet[]>([]);
+  const [activeDataSetId, setActiveDataSetId] = useState<number | null>(null);
+  const [newMetricName, setNewMetricName] = useState<string>("");
+
   useEffect(() => {
     const storedMetrics = localStorage.getItem("metrics");
     if (storedMetrics) {
@@ -73,9 +82,6 @@ const RadarChartApp = () => {
       setDataSets(JSON.parse(storedDataSets));
     }
   }, []);
-
-  const [activeDataSetId, setActiveDataSetId] = useState<number | null>(null);
-  const [newMetricName, setNewMetricName] = useState<string>("");
 
   useEffect(() => {
     if (dataSets.length > 0 && activeDataSetId === null) {
@@ -94,10 +100,13 @@ const RadarChartApp = () => {
     const newColor = CHART_COLORS[dataSets.length % CHART_COLORS.length];
     const newDataSet: DataSet = {
       id: newId,
-      name: `？君`,
+      name: `メンバー`,
       color: newColor,
       values: metrics.reduce(
-        (acc, metric) => ({ ...acc, [metric.name]: 0 }),
+        (acc, metric) => ({
+          ...acc,
+          [metric.name]: { value: 0, comment: "" },
+        }),
         {}
       ),
     };
@@ -127,7 +136,10 @@ const RadarChartApp = () => {
       setDataSets((prev) =>
         prev.map((ds) => ({
           ...ds,
-          values: { ...ds.values, [newMetricName]: 0 },
+          values: {
+            ...ds.values,
+            [newMetricName]: { value: 0, comment: "" },
+          },
         }))
       );
       setNewMetricName("");
@@ -137,14 +149,20 @@ const RadarChartApp = () => {
   const updateMetricValue = (
     dataSetId: number,
     metricName: string,
-    value: string
+    value: string,
+    isComment: boolean = false
   ) => {
     setDataSets((prev) =>
       prev.map((ds) =>
         ds.id === dataSetId
           ? {
               ...ds,
-              values: { ...ds.values, [metricName]: parseFloat(value) || 0 },
+              values: {
+                ...ds.values,
+                [metricName]: isComment
+                  ? { ...ds.values[metricName], comment: value }
+                  : { ...ds.values[metricName], value: parseFloat(value) || 0 },
+              },
             }
           : ds
       )
@@ -166,7 +184,7 @@ const RadarChartApp = () => {
     ...dataSets.reduce(
       (acc, ds) => ({
         ...acc,
-        [ds.name]: ds.values[metric.name] || 0,
+        [ds.name]: ds.values[metric.name]?.value || 0,
       }),
       {}
     ),
@@ -177,7 +195,7 @@ const RadarChartApp = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
-            <span>能力評価レーダーチャート</span>
+            <span>評価レーダーチャート</span>
             <Button onClick={addDataSet} variant="outline">
               メンバーを追加
             </Button>
@@ -288,24 +306,42 @@ const RadarChartApp = () => {
                 </div>
 
                 {metrics.map((metric) => (
-                  <div key={metric.name} className="space-y-2">
+                  <div key={metric.name} className="space-y-2 border-b pb-4">
                     <Label>{metric.name}</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={
-                        dataSets.find((ds) => ds.id === activeDataSetId)
-                          ?.values[metric.name] || ""
-                      }
-                      onChange={(e) =>
-                        updateMetricValue(
-                          activeDataSetId!,
-                          metric.name,
-                          e.target.value
-                        )
-                      }
-                    />
+                    <div className="grid gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={
+                          dataSets.find((ds) => ds.id === activeDataSetId)
+                            ?.values[metric.name]?.value || ""
+                        }
+                        onChange={(e) =>
+                          updateMetricValue(
+                            activeDataSetId,
+                            metric.name,
+                            e.target.value
+                          )
+                        }
+                      />
+                      <Textarea
+                        placeholder={`${metric.name}についてのコメントを入力...`}
+                        value={
+                          dataSets.find((ds) => ds.id === activeDataSetId)
+                            ?.values[metric.name]?.comment || ""
+                        }
+                        onChange={(e) =>
+                          updateMetricValue(
+                            activeDataSetId,
+                            metric.name,
+                            e.target.value,
+                            true
+                          )
+                        }
+                        className="min-h-[100px] resize-y"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
